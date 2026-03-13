@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Commander — Friday Mar 14</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0f1117;--card:#181b23;--border:#262a36;
+    --text:#e4e4e7;--muted:#8b8fa3;--accent:#6366f1;
+    --green:#22c55e;--yellow:#eab308;--red:#ef4444;--orange:#f97316;
+    --blue:#3b82f6;--purple:#a855f7;--cyan:#06b6d4;
+    --do:#22c55e;--delegate:#3b82f6;--defer:#eab308;--ignore:#6b7280;--flag:#ef4444;
+  }
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;overflow-x:hidden}
+
+  /* Header */
+  .header{padding:40px 48px 32px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px}
+  .header h1{font-size:28px;font-weight:700;letter-spacing:-0.5px}
+  .header h1 span{color:var(--accent)}
+  .header-meta{display:flex;gap:24px;font-size:13px;color:var(--muted)}
+  .header-meta b{color:var(--text);font-weight:600}
+
+  /* Stats bar */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--border);margin:0 48px;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+  .stat{background:var(--card);padding:20px 24px;text-align:center}
+  .stat-num{font-size:32px;font-weight:700;letter-spacing:-1px}
+  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:4px}
+  .stat-num.green{color:var(--green)}.stat-num.blue{color:var(--blue)}.stat-num.yellow{color:var(--yellow)}.stat-num.red{color:var(--red)}.stat-num.accent{color:var(--accent)}
+
+  /* Strategy banner */
+  .strategy{margin:24px 48px;padding:16px 24px;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(99,102,241,.04));border:1px solid rgba(99,102,241,.25);border-radius:10px;font-size:14px;color:var(--muted)}
+  .strategy b{color:var(--accent);font-weight:600}
+
+  /* Sections */
+  .container{padding:0 48px 48px}
+  .section{margin-top:40px}
+  .section-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .section-head h2{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+  .badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:4px 12px;border-radius:100px}
+  .badge-do{background:rgba(34,197,94,.15);color:var(--do)}
+  .badge-delegate{background:rgba(59,130,246,.15);color:var(--delegate)}
+  .badge-defer{background:rgba(234,179,8,.15);color:var(--defer)}
+  .badge-flag{background:rgba(239,68,68,.1);color:var(--flag)}
+  .badge-ignore{background:rgba(107,114,128,.15);color:var(--ignore)}
+
+  /* Task cards */
+  .task-grid{display:flex;flex-direction:column;gap:12px}
+  .task-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;display:grid;grid-template-columns:48px 1fr auto;gap:16px;align-items:start;transition:border-color .2s}
+  .task-card:hover{border-color:rgba(99,102,241,.4)}
+  .rank-circle{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;margin-top:2px}
+  .rank-do{background:rgba(34,197,94,.15);color:var(--do);border:2px solid rgba(34,197,94,.3)}
+  .rank-delegate{background:rgba(59,130,246,.15);color:var(--delegate);border:2px solid rgba(59,130,246,.3)}
+  .task-id{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .task-title{font-size:16px;font-weight:600;margin:2px 0 6px}
+  .task-why{font-size:13px;color:var(--muted);line-height:1.6}
+  .task-meta{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:120px}
+  .score{font-size:28px;font-weight:800;letter-spacing:-1px}
+  .score-do{color:var(--do)}
+  .score-delegate{color:var(--delegate)}
+  .time-pill{font-size:12px;font-weight:600;padding:4px 12px;border-radius:100px;background:rgba(255,255,255,.06);color:var(--muted)}
+  .deadline-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;text-transform:uppercase;letter-spacing:.5px}
+  .deadline-urgent{background:rgba(239,68,68,.15);color:var(--red)}
+  .deadline-soon{background:rgba(234,179,8,.15);color:var(--yellow)}
+  .deadline-asap{background:rgba(249,115,22,.15);color:var(--orange)}
+  .outcome{font-size:12px;color:var(--muted);margin-top:6px;padding-top:8px;border-top:1px solid var(--border);line-height:1.5}
+  .outcome b{color:var(--text);font-weight:600}
+  .delegate-to{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--blue);background:rgba(59,130,246,.1);padding:3px 10px;border-radius:100px;margin-top:4px}
+
+  /* Defer & flag rows */
+  .mini-grid{display:flex;flex-direction:column;gap:8px}
+  .mini-row{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .mini-row .task-id{min-width:36px}
+  .mini-row .task-title{font-size:14px;flex:1;min-width:180px;margin:0}
+  .mini-reason{font-size:13px;color:var(--muted);flex:1;min-width:200px}
+  .mini-trigger{font-size:12px;font-weight:600;color:var(--yellow);white-space:nowrap}
+  .mini-flag{font-size:12px;font-weight:600;color:var(--red);white-space:nowrap}
+  .mini-ignore{font-size:12px;font-weight:600;color:var(--ignore);white-space:nowrap}
+  .strike{text-decoration:line-through;opacity:.5}
+
+  /* Timeline */
+  .timeline{position:relative;padding-left:32px}
+  .timeline::before{content:'';position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:var(--border)}
+  .tl-item{position:relative;padding:0 0 24px 0}
+  .tl-item:last-child{padding-bottom:0}
+  .tl-dot{position:absolute;left:-32px;top:4px;width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center}
+  .tl-dot-inner{width:8px;height:8px;border-radius:50%}
+  .tl-dot.do .tl-dot-inner{background:var(--do)}
+  .tl-dot.do{border-color:rgba(34,197,94,.4)}
+  .tl-dot.delegate .tl-dot-inner{background:var(--blue)}
+  .tl-dot.delegate{border-color:rgba(59,130,246,.4)}
+  .tl-dot.check .tl-dot-inner{background:var(--purple)}
+  .tl-dot.check{border-color:rgba(168,85,247,.4)}
+  .tl-dot.admin .tl-dot-inner{background:var(--muted)}
+  .tl-time{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px}
+  .tl-title{font-size:14px;font-weight:600;margin:2px 0}
+  .tl-desc{font-size:12px;color:var(--muted)}
+  .tl-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px;margin-left:8px;vertical-align:middle}
+  .tl-tag.do{background:rgba(34,197,94,.15);color:var(--do)}
+  .tl-tag.delegate{background:rgba(59,130,246,.15);color:var(--blue)}
+  .tl-tag.check{background:rgba(168,85,247,.15);color:var(--purple)}
+  .tl-tag.admin{background:rgba(107,114,128,.15);color:var(--muted)}
+
+  /* Risks box */
+  .risk-box{background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(239,68,68,.02));border:1px solid rgba(239,68,68,.2);border-radius:12px;padding:20px 24px;margin-top:24px}
+  .risk-box h3{font-size:14px;font-weight:700;color:var(--red);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;font-size:12px}
+  .risk-item{font-size:13px;color:var(--muted);padding:4px 0;display:flex;gap:8px}
+  .risk-item b{color:var(--text);font-weight:600}
+  .risk-bullet{color:var(--red);font-weight:700;flex-shrink:0}
+
+  /* Footer */
+  .footer{margin:40px 48px 0;padding:24px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+
+  /* Responsive */
+  @media(max-width:768px){
+    .header,.container,.stats,.strategy,.footer{padding-left:20px;padding-right:20px;margin-left:0;margin-right:0}
+    .stats{margin:0 20px}
+    .strategy{margin:24px 20px}
+    .task-card{grid-template-columns:40px 1fr;gap:12px}
+    .task-meta{flex-direction:row;align-items:center;grid-column:1/-1}
+    .footer{margin:40px 20px 0}
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1><span>Task Commander</span> — Execution Plan</h1>
+    <div style="font-size:13px;color:var(--muted);margin-top:6px">Friday, March 14 &middot; 10 tasks in &middot; 6 actions out</div>
+  </div>
+  <div class="header-meta">
+    <span>Capacity: <b>~8h</b></span>
+    <span>Total Backlog: <b>~22h</b></span>
+    <span>Utilization: <b>36%</b></span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats" style="margin-top:24px">
+  <div class="stat"><div class="stat-num green">3</div><div class="stat-label">Do Self</div></div>
+  <div class="stat"><div class="stat-num blue">2</div><div class="stat-label">Delegate</div></div>
+  <div class="stat"><div class="stat-num yellow">3</div><div class="stat-label">Defer</div></div>
+  <div class="stat"><div class="stat-num red">1</div><div class="stat-label">Flag Error</div></div>
+  <div class="stat"><div class="stat-num" style="color:var(--ignore)">1</div><div class="stat-label">Ignore</div></div>
+</div>
+
+<!-- STRATEGY -->
+<div class="strategy">
+  <b>Today's Strategy:</b> Protect revenue (₹2.4Cr client) and compliance (GST) first. Unblock Monday's dependency chain (T06→T04). Delegate data fixes. Weekend absorbs slides.
+</div>
+
+<div class="container">
+
+<!-- DO SELF TODAY -->
+<div class="section">
+  <div class="section-head">
+    <h2>Manager Owned Today</h2>
+    <span class="badge badge-do">Do Self</span>
+  </div>
+  <div class="task-grid">
+
+    <div class="task-card">
+      <div class="rank-circle rank-do">1</div>
+      <div>
+        <div class="task-id">T02</div>
+        <div class="task-title">Respond to Key Client's Service Complaint</div>
+        <div class="task-why">₹2.4 Cr annual account (18% of revenue). Client VP is CC'd. Second complaint in 3 months — relationship at breaking point. Needs a resolution plan, not acknowledgment.</div>
+        <div class="outcome"><b>Expected outcome:</b> Resolution plan with concrete steps + timeline sent to client & VP. De-escalation achieved.</div>
+      </div>
+      <div class="task-meta">
+        <div class="score score-do">50</div>
+        <div class="time-pill">4 hours</div>
+        <div class="deadline-pill deadline-urgent">Due Tomorrow</div>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="rank-circle rank-do">2</div>
+      <div>
+        <div class="task-id">T06</div>
+        <div class="task-title">Complete Q4 Cost Analysis Report</div>
+        <div class="task-why">Root blocker — T04 (Monday slides) cannot start until this is done. Also feeds upcoming budget discussion. Numbers must be ERP-verified. Finance Head assists with data extraction.</div>
+        <div class="outcome"><b>Expected outcome:</b> Verified report complete. T04 unblocked for weekend slide prep.</div>
+      </div>
+      <div class="task-meta">
+        <div class="score score-do">41</div>
+        <div class="time-pill">3 hours*</div>
+        <div class="deadline-pill deadline-soon">Mon Mar 17</div>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="rank-circle rank-do">3</div>
+      <div>
+        <div class="task-id">T05</div>
+        <div class="task-title">Approve 4 Pending Leave Requests</div>
+        <div class="task-why">Requires your approval authority. Team members blocked from confirming personal travel. Quick win — high value per minute spent.</div>
+        <div class="outcome"><b>Expected outcome:</b> All 4 requests resolved. Team can plan their week.</div>
+      </div>
+      <div class="task-meta">
+        <div class="score score-do">21</div>
+        <div class="time-pill">30 min</div>
+        <div class="deadline-pill deadline-soon">Mon Mar 17</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DELEGATE TODAY -->
+<div class="section">
+  <div class="section-head">
+    <h2>Delegated Today</h2>
+    <span class="badge badge-delegate">Delegate</span>
+  </div>
+  <div class="task-grid">
+
+    <div class="task-card">
+      <div class="rank-circle rank-delegate">1</div>
+      <div>
+        <div class="task-id">T01</div>
+        <div class="task-title">File GST Return — Data Preparation</div>
+        <div class="task-why">₹50,000/day government penalty. No extensions. Finance Head pulls ERP data and prepares draft today. Manager verifies + files Monday morning.</div>
+        <div class="delegate-to">&#10140; Finance Head</div>
+        <div class="outcome"><b>Checkpoint:</b> Monday 9 AM — review draft, verify, file before EOD.</div>
+      </div>
+      <div class="task-meta">
+        <div class="score score-delegate">49</div>
+        <div class="time-pill">10 min to assign</div>
+        <div class="deadline-pill deadline-soon">Mon Mar 17</div>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="rank-circle rank-delegate">2</div>
+      <div>
+        <div class="task-id">T08</div>
+        <div class="task-title">Fix Incorrect Revenue Numbers in Dashboard</div>
+        <div class="task-why">Dashboard shows Q3 instead of Q4. Leadership referencing wrong data in meetings. CEO may cite it. Clear fix — swap data source.</div>
+        <div class="delegate-to">&#10140; Data Team</div>
+        <div class="outcome"><b>Checkpoint:</b> Today 2 PM — spot-check 2-3 key figures after fix goes live.</div>
+      </div>
+      <div class="task-meta">
+        <div class="score score-delegate">42</div>
+        <div class="time-pill">10 min to assign</div>
+        <div class="deadline-pill deadline-asap">ASAP</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TIMELINE -->
+<div class="section">
+  <div class="section-head">
+    <h2>Execution Timeline</h2>
+  </div>
+  <div class="timeline">
+
+    <div class="tl-item">
+      <div class="tl-dot delegate"><div class="tl-dot-inner"></div></div>
+      <div class="tl-time">9:00 – 9:10</div>
+      <div class="tl-title">Delegate T01 to Finance Head <span class="tl-tag delegate">Delegate</span></div>
+      <div class="tl-desc">Send written instruction: pull March GST data from ERP, reconcile, prepare draft by EOD.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot delegate"><div class="tl-dot-inner"></div></div>
+      <div class="tl-time">9:10 – 9:20</div>
+      <div class="tl-title">Delegate T08 to Data Team <span class="tl-tag delegate">Delegate</span></div>
+      <div class="tl-desc">Dashboard fix: swap Q3 → Q4. Request confirmation by 2 PM.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot do"><div class="tl-dot-inner"></div></div>
+      <div class="tl-time">9:20 – 9:35</div>
+      <div class="tl-title">T05 — Approve Leave Requests <span class="tl-tag do">Self</span></div>
+      <div class="tl-desc">Review and approve/deny all 4. Quick win before deep work.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot admin"><div class="tl-dot-inner"></div></div>
+      <div class="tl-time">9:35 – 9:40</div>
+      <div class="tl-title">Flag T07 as stale/duplicate <span class="tl-tag admin">Admin</span></div>
+      <div class="tl-desc">One-line reply to Admin Team: Diwali is 7 months away, this is a stale request.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot do"><div class="tl-dot-inner"></div></div>
+      <div class="tl-time">9:45 – 13:45</div>
+      <div class="tl-title">T02 — Client Complaint Resolution <span class="tl-tag do">Deep Work</span></div>
+      <div class="tl-desc">Investigate history, get KAM records, draft resolution plan, send to client + VP. Most critical 4 hours of the day.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot check"><div class="tl-dot-inner"></div></div>
+      <div class="tl-time">13:45 – 14:15</div>
+      <div class="tl-title">Lunch + Dashboard Checkpoint <span class="tl-tag check">Checkpoint</span></div>
+      <div class="tl-desc">Verify T08 dashboard fix is live. Spot-check key revenue figures.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot do"><div class="tl-dot-inner"></div></div>
+      <div class="tl-time">14:15 – 17:15</div>
+      <div class="tl-title">T06 — Q4 Cost Analysis <span class="tl-tag do">Deep Work</span></div>
+      <div class="tl-desc">Complete analysis with Finance Head's data. Verify against ERP. Deliver report — unblocks weekend T04.</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot check"><div class="tl-dot-inner"></div></div>
+      <div class="tl-time">17:15 – 17:30</div>
+      <div class="tl-title">EOD Checkpoint — T01 Status <span class="tl-tag check">Checkpoint</span></div>
+      <div class="tl-desc">Confirm Finance Head's GST data prep is on track. Flag issues for Monday.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DEFER -->
+<div class="section">
+  <div class="section-head">
+    <h2>Deferred</h2>
+    <span class="badge badge-defer">Not Today</span>
+  </div>
+  <div class="mini-grid">
+    <div class="mini-row">
+      <div class="task-id">T04</div>
+      <div class="task-title">Prepare Monday Review Slides</div>
+      <div class="mini-reason">Blocked by T06. Once T06 completes today, build slides over weekend (3h).</div>
+      <div class="mini-trigger">&#8594; Saturday AM</div>
+    </div>
+    <div class="mini-row">
+      <div class="task-id">T03</div>
+      <div class="task-title">Reply to CEO's WhatsApp</div>
+      <div class="mini-reason">No action item stated. CEO shares articles regularly. Brief 2-line reply suffices.</div>
+      <div class="mini-trigger">&#8594; Saturday (15 min)</div>
+    </div>
+    <div class="mini-row">
+      <div class="task-id">T09</div>
+      <div class="task-title">Cybersecurity Training</div>
+      <div class="mini-reason">Deadline Thu Mar 20 — 6 days away. Self-paced module. No urgency today.</div>
+      <div class="mini-trigger">&#8594; Tue / Wed next week</div>
+    </div>
+  </div>
+</div>
+
+<!-- FLAG / IGNORE -->
+<div class="section">
+  <div class="section-head">
+    <h2>Eliminated</h2>
+    <span class="badge badge-flag">Flagged</span>
+    <span class="badge badge-ignore">Ignored</span>
+  </div>
+  <div class="mini-grid">
+    <div class="mini-row">
+      <div class="task-id"><span class="strike">T07</span></div>
+      <div class="task-title"><span class="strike">Order Diwali Gifts</span></div>
+      <div class="mini-reason">Diwali is October. This is a stale request forwarded from 5 months ago.</div>
+      <div class="mini-flag">&#9888; ERROR — Do Not Execute</div>
+    </div>
+    <div class="mini-row">
+      <div class="task-id" style="opacity:.5">T10</div>
+      <div class="task-title" style="opacity:.5">Slack Parking Thread (40 msgs)</div>
+      <div class="mini-reason">Zero operational impact. No decision authority. Don't engage.</div>
+      <div class="mini-ignore">&#10005; IGNORE</div>
+    </div>
+  </div>
+</div>
+
+<!-- RISKS -->
+<div class="risk-box">
+  <h3>&#9888; Risks Prevented Today</h3>
+  <div class="risk-item"><span class="risk-bullet">1.</span> <span><b>₹2.4 Cr client loss</b> — resolution plan sent before Saturday deadline (T02)</span></div>
+  <div class="risk-item"><span class="risk-bullet">2.</span> <span><b>₹50K/day GST penalty</b> — data prep delegated, manager files Monday (T01)</span></div>
+  <div class="risk-item"><span class="risk-bullet">3.</span> <span><b>Monday review failure</b> — T06 done today unblocks T04 slides over weekend</span></div>
+  <div class="risk-item"><span class="risk-bullet">4.</span> <span><b>Leadership credibility</b> — wrong dashboard numbers corrected same-day (T08)</span></div>
+</div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span>Deterministic Task Commander v1.0</span>
+  <span>Generated: Friday, March 14, 2026</span>
+</div>
+
+</body>
+</html>

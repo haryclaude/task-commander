@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Remote — Task Commander</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0f1117;--card:#181b23;--border:#262a36;
+    --text:#e4e4e7;--muted:#8b8fa3;--accent:#6366f1;
+    --green:#22c55e;--red:#ef4444;
+  }
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column}
+
+  /* === CONNECT SCREEN === */
+  .connect-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:32px;gap:24px}
+  .connect-screen.hidden{display:none}
+  .connect-title{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+  .connect-title span{color:var(--accent)}
+  .connect-sub{font-size:13px;color:var(--muted);text-align:center;max-width:280px}
+
+  .code-input{width:200px;height:64px;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);font-size:32px;font-weight:800;text-align:center;letter-spacing:8px;outline:none;transition:border-color .2s}
+  .code-input:focus{border-color:var(--accent)}
+  .code-input.error{border-color:var(--red);animation:shake .4s}
+  @keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+
+  .connect-btn{width:200px;height:52px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s}
+  .connect-btn:disabled{opacity:.4;cursor:not-allowed}
+  .connect-btn:active:not(:disabled){opacity:.8}
+
+  .status-msg{font-size:13px;color:var(--muted);min-height:20px;text-align:center}
+  .status-msg.err{color:var(--red)}
+
+  /* === REMOTE SCREEN === */
+  .remote-screen{display:none;flex-direction:column;height:100vh}
+  .remote-screen.active{display:flex}
+
+  /* Top bar */
+  .top-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .top-bar .conn-label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+  .top-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+  .top-bar .slide-counter{font-size:14px;font-weight:800;color:var(--accent)}
+
+  /* Progress */
+  .remote-progress{height:3px;background:var(--border)}
+  .remote-progress-fill{height:100%;background:var(--accent);transition:width .3s ease;width:0}
+
+  /* Notes */
+  .notes-area{flex:1;padding:24px 20px;overflow-y:auto}
+  .notes-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+  .notes-text{font-size:18px;font-weight:500;line-height:1.7;color:var(--text)}
+
+  /* Controls */
+  .controls{padding:20px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
+  .nav-row{display:flex;gap:12px}
+  .nav-btn{flex:1;height:72px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--text);font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;user-select:none}
+  .nav-btn:active{background:rgba(99,102,241,.15)}
+  .nav-btn.prev{font-size:20px}
+  .nav-btn.next{font-size:20px;background:var(--accent);border-color:var(--accent);color:#fff}
+  .nav-btn.next:active{background:rgba(99,102,241,.7)}
+
+  .util-row{display:flex;gap:12px}
+  .util-btn{flex:1;height:48px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;user-select:none}
+  .util-btn:active{background:rgba(99,102,241,.1)}
+</style>
+</head>
+<body>
+
+<!-- CONNECT SCREEN -->
+<div class="connect-screen" id="connectScreen">
+  <div class="connect-title"><span>Task Commander</span> Remote</div>
+  <div class="connect-sub">Enter the 4-digit code shown on the bottom-left of the deck</div>
+  <input class="code-input" id="codeInput" type="tel" maxlength="4" placeholder="0000" inputmode="numeric" autocomplete="off">
+  <button class="connect-btn" id="connectBtn" onclick="connectToDeck()">Connect</button>
+  <div class="status-msg" id="statusMsg"></div>
+</div>
+
+<!-- REMOTE SCREEN -->
+<div class="remote-screen" id="remoteScreen">
+  <div class="top-bar">
+    <div class="conn-label"><div class="dot"></div> Connected</div>
+    <div class="slide-counter" id="slideCounter">1 / 10</div>
+  </div>
+  <div class="remote-progress"><div class="remote-progress-fill" id="progressFill"></div></div>
+
+  <div class="notes-area">
+    <div class="notes-label">Speaker Notes</div>
+    <div class="notes-text" id="notesText">Title slide. Set the stage: a deterministic system, not another productivity hack.</div>
+  </div>
+
+  <div class="controls">
+    <div class="nav-row">
+      <button class="nav-btn prev" onclick="goSlide(currentSlide-1)">&#8592; Prev</button>
+      <button class="nav-btn next" onclick="goSlide(currentSlide+1)">Next &#8594;</button>
+    </div>
+    <div class="util-row">
+      <button class="util-btn" onclick="sendFullscreen()">&#9723; Fullscreen Deck</button>
+      <button class="util-btn" onclick="goSlide(0)">&#8634; First Slide</button>
+      <button class="util-btn" onclick="goSlide(totalSlides-1)">&#9654; Last Slide</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+let remotePeer=null, conn=null;
+let currentSlide=0, totalSlides=10;
+let retryCount=0;
+
+const codeInput=document.getElementById('codeInput');
+codeInput.addEventListener('keydown',function(e){
+  if(e.key==='Enter')connectToDeck();
+});
+codeInput.addEventListener('input',function(){
+  this.classList.remove('error');
+  document.getElementById('statusMsg').textContent='';
+});
+
+function setStatus(msg,isErr){
+  const el=document.getElementById('statusMsg');
+  el.textContent=msg;
+  el.className='status-msg'+(isErr?' err':'');
+}
+
+function connectToDeck(){
+  const code=codeInput.value.trim();
+  if(code.length!==4||!/^\d{4}$/.test(code)){
+    codeInput.classList.add('error');
+    setStatus('Enter a 4-digit code',true);
+    return;
+  }
+
+  document.getElementById('connectBtn').disabled=true;
+  setStatus('Connecting... (attempt '+(retryCount+1)+')');
+
+  if(remotePeer&&!remotePeer.destroyed)remotePeer.destroy();
+
+  remotePeer=new Peer({
+    debug:0,
+    config:{iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:stun1.l.google.com:19302'}
+    ]}
+  });
+
+  let connected=false;
+
+  remotePeer.on('open',function(){
+    setStatus('Registered. Reaching deck...');
+    conn=remotePeer.connect('tc-'+code,{reliable:true,serialization:'json'});
+
+    conn.on('open',function(){
+      connected=true;
+      retryCount=0;
+      document.getElementById('connectScreen').classList.add('hidden');
+      document.getElementById('remoteScreen').classList.add('active');
+    });
+
+    conn.on('data',function(data){
+      if(typeof data.slide==='number'){
+        currentSlide=data.slide;
+        if(data.total)totalSlides=data.total;
+        updateUI();
+        if(data.note!==undefined)document.getElementById('notesText').textContent=data.note;
+      }
+    });
+
+    conn.on('close',function(){
+      document.getElementById('connectScreen').classList.remove('hidden');
+      document.getElementById('remoteScreen').classList.remove('active');
+      document.getElementById('connectBtn').disabled=false;
+      setStatus('Disconnected. Tap Connect to rejoin.');
+      conn=null;
+    });
+
+    conn.on('error',function(){
+      if(!connected)retryConnect(code);
+    });
+
+    setTimeout(function(){if(!connected)retryConnect(code)},6000);
+  });
+
+  remotePeer.on('error',function(err){
+    if(err.type==='peer-unavailable'){
+      setStatus('Deck not found. Check the code.',true);
+      document.getElementById('connectBtn').disabled=false;
+      retryCount=0;
+    }else if(!connected){
+      retryConnect(code);
+    }
+  });
+}
+
+function retryConnect(code){
+  retryCount++;
+  if(retryCount>=3){
+    setStatus('Could not connect after 3 attempts.',true);
+    document.getElementById('connectBtn').disabled=false;
+    retryCount=0;
+    return;
+  }
+  if(remotePeer&&!remotePeer.destroyed)remotePeer.destroy();
+  setTimeout(function(){connectToDeck()},1500);
+}
+
+function updateUI(){
+  document.getElementById('slideCounter').textContent=(currentSlide+1)+' / '+totalSlides;
+  document.getElementById('progressFill').style.width=(currentSlide/(totalSlides-1)*100)+'%';
+}
+
+function goSlide(n){
+  if(n<0||n>=totalSlides)return;
+  currentSlide=n;
+  updateUI();
+  if(conn&&conn.open)conn.send({slide:currentSlide});
+}
+
+function sendFullscreen(){
+  if(conn&&conn.open)conn.send({action:'fullscreen'});
+}
+
+// Swipe support
+let touchX=0;
+document.addEventListener('touchstart',function(e){touchX=e.touches[0].clientX});
+document.addEventListener('touchend',function(e){
+  const diff=e.changedTouches[0].clientX-touchX;
+  if(Math.abs(diff)>60){
+    if(diff<0)goSlide(currentSlide+1);
+    else goSlide(currentSlide-1);
+  }
+});
+
+// Keyboard on remote too
+document.addEventListener('keydown',function(e){
+  if(document.getElementById('connectScreen').classList.contains('hidden')){
+    if(e.key==='ArrowRight')goSlide(currentSlide+1);
+    if(e.key==='ArrowLeft')goSlide(currentSlide-1);
+  }
+});
+</script>
+</body>
+</html>

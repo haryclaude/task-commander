@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Commander — Presentation</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0f1117;--card:#181b23;--border:#262a36;
+    --text:#e4e4e7;--muted:#8b8fa3;--accent:#6366f1;
+    --green:#22c55e;--yellow:#eab308;--red:#ef4444;
+    --blue:#3b82f6;--purple:#a855f7;--orange:#f97316;
+  }
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw}
+
+  /* Slide system */
+  .slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;width:100vw;padding:60px 80px;text-align:center;position:relative}
+  .slide.active{display:flex}
+
+  /* Typography */
+  .slide-num{position:absolute;top:32px;right:40px;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:1px}
+  h1{font-size:56px;font-weight:800;letter-spacing:-2px;line-height:1.15}
+  h2{font-size:44px;font-weight:800;letter-spacing:-1.5px;line-height:1.2}
+  h3{font-size:28px;font-weight:700;letter-spacing:-0.5px;color:var(--muted);margin-top:12px}
+  .subtitle{font-size:20px;color:var(--muted);margin-top:16px;line-height:1.6;max-width:700px}
+  .accent{color:var(--accent)}
+  .green{color:var(--green)}
+  .red{color:var(--red)}
+  .yellow{color:var(--yellow)}
+  .blue{color:var(--blue)}
+  .orange{color:var(--orange)}
+  .big-num{font-size:120px;font-weight:900;letter-spacing:-5px;line-height:1}
+  .medium-num{font-size:72px;font-weight:900;letter-spacing:-3px;line-height:1}
+
+  /* Cards grid */
+  .cards{display:flex;gap:20px;margin-top:40px;flex-wrap:wrap;justify-content:center;max-width:1100px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 24px;text-align:left;flex:1;min-width:200px;max-width:320px}
+  .card-icon{font-size:32px;margin-bottom:12px}
+  .card h4{font-size:18px;font-weight:700;margin-bottom:8px}
+  .card p{font-size:14px;color:var(--muted);line-height:1.6}
+  .card-accent{border-color:rgba(99,102,241,.3);background:linear-gradient(135deg,rgba(99,102,241,.08),var(--card))}
+
+  /* Horizontal list */
+  .h-list{display:flex;gap:0;margin-top:48px;max-width:1000px;width:100%}
+  .h-item{flex:1;padding:24px 16px;text-align:center;border-right:1px solid var(--border)}
+  .h-item:last-child{border-right:none}
+  .h-item .step-num{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  .h-item h4{font-size:16px;font-weight:700;margin-bottom:6px}
+  .h-item p{font-size:13px;color:var(--muted);line-height:1.5}
+
+  /* Vertical list */
+  .v-list{text-align:left;max-width:800px;margin-top:40px;width:100%}
+  .v-item{display:flex;align-items:flex-start;gap:20px;padding:18px 0;border-bottom:1px solid var(--border)}
+  .v-item:last-child{border-bottom:none}
+  .v-num{font-size:24px;font-weight:900;min-width:36px;text-align:right}
+  .v-content h4{font-size:17px;font-weight:700;margin-bottom:3px}
+  .v-content p{font-size:14px;color:var(--muted)}
+  .v-weight{font-size:13px;font-weight:700;margin-left:auto;white-space:nowrap;padding:4px 12px;border-radius:100px;background:rgba(99,102,241,.12);color:var(--accent)}
+
+  /* Bucket bar */
+  .bucket-bar{display:flex;gap:0;margin-top:48px;max-width:900px;width:100%;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+  .bucket{padding:24px 16px;text-align:center;flex:1}
+  .bucket-num{font-size:40px;font-weight:900}
+  .bucket-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+  .bucket-tasks{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  /* Stats row */
+  .stat-row{display:flex;gap:32px;margin-top:48px;flex-wrap:wrap;justify-content:center}
+  .stat-block{text-align:center}
+  .stat-block .medium-num{font-size:56px}
+  .stat-block .stat-label{font-size:13px;color:var(--muted);margin-top:4px;font-weight:600}
+
+  /* Risk items */
+  .risk-list{text-align:left;max-width:800px;margin-top:40px}
+  .risk-row{display:flex;gap:16px;align-items:baseline;padding:14px 0;border-bottom:1px solid var(--border)}
+  .risk-row:last-child{border-bottom:none}
+  .risk-check{color:var(--green);font-size:20px;font-weight:700}
+  .risk-text{font-size:17px;line-height:1.5}
+  .risk-text b{color:var(--text)}
+  .risk-text span{color:var(--muted)}
+
+  /* CTA box */
+  .cta-box{margin-top:48px;padding:32px 48px;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(99,102,241,.04));border:1px solid rgba(99,102,241,.3);border-radius:16px;max-width:600px}
+  .cta-box p{font-size:16px;color:var(--muted);line-height:1.6}
+  .cta-box .arrow{font-size:24px;color:var(--accent);margin-top:12px}
+
+  /* Navigation */
+  .nav{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100}
+  .nav-dot{width:10px;height:10px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s}
+  .nav-dot.active{background:var(--accent);width:28px;border-radius:5px}
+  .nav-hint{position:fixed;bottom:32px;right:40px;font-size:12px;color:var(--muted)}
+
+  /* Room code badge */
+  .room-badge{position:fixed;bottom:28px;left:32px;display:flex;align-items:center;gap:8px;z-index:100;font-size:13px;color:var(--muted)}
+  .room-badge .conn-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .3s}
+  .room-badge .conn-dot.connected{background:var(--green)}
+  .room-badge .code{font-weight:800;font-size:16px;letter-spacing:2px;color:var(--muted);transition:color .3s}
+  .room-badge .code.connected{color:var(--green)}
+
+  /* Progress bar */
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);transition:width .3s ease;z-index:100}
+
+  /* Animations */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+  .slide.active>*{animation:fadeUp .5s ease both}
+  .slide.active>*:nth-child(2){animation-delay:.1s}
+  .slide.active>*:nth-child(3){animation-delay:.2s}
+  .slide.active>*:nth-child(4){animation-delay:.3s}
+  .slide.active>*:nth-child(5){animation-delay:.4s}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide active" data-slide="0">
+  <div class="slide-num">01 / 10</div>
+  <h1>Deterministic<br><span class="accent">Task Commander</span></h1>
+  <h3>From chaos to clarity in one framework</h3>
+  <div class="subtitle">A system that converts any raw task list into the highest-impact execution plan — with zero subjectivity.</div>
+</div>
+
+<!-- SLIDE 2: THE PROBLEM -->
+<div class="slide" data-slide="1">
+  <div class="slide-num">02 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">The Problem</h3>
+  <h2>Every manager faces this<br>every single morning</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon" style="color:var(--red)">22h</div>
+      <h4>Of tasks waiting</h4>
+      <p>Emails, Slack, WhatsApp, compliance, clients, team needs — all demanding attention right now.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="color:var(--yellow)">8h</div>
+      <h4>Actually available</h4>
+      <p>One workday. Meetings, context-switching, and energy drain cut even that down further.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="color:var(--accent)">???</div>
+      <h4>What gets done?</h4>
+      <p>Usually decided by whoever's loudest, most recent, or most senior. Not by what matters most.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: THE TRAP -->
+<div class="slide" data-slide="2">
+  <div class="slide-num">03 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">The Trap</h3>
+  <h2>Most managers optimize for<br>the <span class="red">wrong thing</span></h2>
+  <div class="cards" style="margin-top:48px">
+    <div class="card">
+      <h4 class="red">Inbox Zero</h4>
+      <p>Responding to everything feels productive. But replying to a 40-message parking thread while a ₹2.4Cr client churns is not work — it's avoidance.</p>
+    </div>
+    <div class="card">
+      <h4 class="red">Pleasing Seniority</h4>
+      <p>CEO texted? Drop everything. But a casual "thoughts?" at 11pm is not the same as a board directive. Urgency ≠ importance.</p>
+    </div>
+    <div class="card">
+      <h4 class="red">Completion Count</h4>
+      <p>Doing 8 small tasks instead of 2 critical ones feels like winning. Until the GST penalty hits and the client leaves.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: THE OBJECTIVE -->
+<div class="slide" data-slide="3">
+  <div class="slide-num">04 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">The Objective</h3>
+  <h2>Maximize <span class="green">business risk reduced</span><br>within limited capacity</h2>
+  <div class="subtitle" style="max-width:600px;margin-top:24px">
+    Not: "do the most tasks."<br>
+    Not: "make everyone happy."<br>
+    Not: "clear the inbox."<br><br>
+    <b style="color:var(--text)">Instead:</b> What action today prevents the most damage and creates the most leverage?
+  </div>
+</div>
+
+<!-- SLIDE 5: THE METHOD — 5 RULES -->
+<div class="slide" data-slide="4">
+  <div class="slide-num">05 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">The Method</h3>
+  <h2>5 rules, applied in <span class="accent">strict order</span></h2>
+  <div class="h-list">
+    <div class="h-item">
+      <div class="step-num">Rule 1</div>
+      <h4 class="red">Flag Errors</h4>
+      <p>Kill duplicates, stale tasks, impossible items before they waste time.</p>
+    </div>
+    <div class="h-item">
+      <div class="step-num">Rule 2</div>
+      <h4 style="color:var(--ignore)">Ignore Noise</h4>
+      <p>No action, no impact, no deadline, no consequence? It's not a task.</p>
+    </div>
+    <div class="h-item">
+      <div class="step-num">Rule 3</div>
+      <h4 class="yellow">Check Dependencies</h4>
+      <p>Never rank a task above the thing blocking it.</p>
+    </div>
+    <div class="h-item">
+      <div class="step-num">Rule 4</div>
+      <h4 class="blue">Check Ownership</h4>
+      <p>Does it need your judgment? Own it. Can someone else execute? Delegate it.</p>
+    </div>
+    <div class="h-item">
+      <div class="step-num">Rule 5</div>
+      <h4 class="accent">Score & Rank</h4>
+      <p>Weighted formula. Deterministic tie-breakers. Same input → same output.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: THE SCORING -->
+<div class="slide" data-slide="5">
+  <div class="slide-num">06 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">The Scoring Formula</h3>
+  <h2>6 factors. Weighted. <span class="accent">No gut feel.</span></h2>
+  <div class="v-list">
+    <div class="v-item">
+      <div class="v-num accent">1</div>
+      <div class="v-content"><h4>Deadline Criticality</h4><p>How hard and close is the deadline?</p></div>
+      <div class="v-weight">×3</div>
+    </div>
+    <div class="v-item">
+      <div class="v-num accent">2</div>
+      <div class="v-content"><h4>Business Impact</h4><p>Revenue, client, legal, compliance risk at stake</p></div>
+      <div class="v-weight">×4 (heaviest)</div>
+    </div>
+    <div class="v-item">
+      <div class="v-num accent">3</div>
+      <div class="v-content"><h4>Escalation / Visibility</h4><p>Who's watching — CEO, regulator, client VP?</p></div>
+      <div class="v-weight">×2</div>
+    </div>
+    <div class="v-item">
+      <div class="v-num accent">4</div>
+      <div class="v-content"><h4>Dependency Leverage</h4><p>Does completing this unblock other critical work?</p></div>
+      <div class="v-weight">×2</div>
+    </div>
+    <div class="v-item">
+      <div class="v-num accent">5</div>
+      <div class="v-content"><h4>Time Efficiency</h4><p>Impact per minute — quick wins score higher</p></div>
+      <div class="v-weight">×1</div>
+    </div>
+    <div class="v-item">
+      <div class="v-num accent">6</div>
+      <div class="v-content"><h4>Reversibility Penalty</h4><p>Can you recover from delay, or is the damage permanent?</p></div>
+      <div class="v-weight">×3</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: THE BUCKETS -->
+<div class="slide" data-slide="6">
+  <div class="slide-num">07 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">The Result</h3>
+  <h2>10 tasks → <span class="accent">5 buckets</span></h2>
+  <div class="bucket-bar">
+    <div class="bucket" style="background:rgba(34,197,94,.08)">
+      <div class="bucket-num green">3</div>
+      <div class="bucket-label green">Do Self</div>
+      <div class="bucket-tasks">T02 · T06 · T05</div>
+    </div>
+    <div class="bucket" style="background:rgba(59,130,246,.08)">
+      <div class="bucket-num blue">2</div>
+      <div class="bucket-label blue">Delegate</div>
+      <div class="bucket-tasks">T01 · T08</div>
+    </div>
+    <div class="bucket" style="background:rgba(234,179,8,.06)">
+      <div class="bucket-num yellow">3</div>
+      <div class="bucket-label yellow">Defer</div>
+      <div class="bucket-tasks">T04 · T03 · T09</div>
+    </div>
+    <div class="bucket" style="background:rgba(239,68,68,.06)">
+      <div class="bucket-num red">1</div>
+      <div class="bucket-label red">Error</div>
+      <div class="bucket-tasks">T07</div>
+    </div>
+    <div class="bucket" style="background:rgba(107,114,128,.06)">
+      <div class="bucket-num" style="color:var(--muted)">1</div>
+      <div class="bucket-label" style="color:var(--muted)">Ignore</div>
+      <div class="bucket-tasks">T10</div>
+    </div>
+  </div>
+  <div class="subtitle" style="margin-top:32px;font-size:16px">
+    Every task has exactly <b style="color:var(--text)">one decision</b>. No ambiguity. No "maybe later."
+  </div>
+</div>
+
+<!-- SLIDE 8: RISKS PREVENTED -->
+<div class="slide" data-slide="7">
+  <div class="slide-num">08 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">What We Protected Today</h3>
+  <h2>4 risks <span class="green">neutralized</span> in 8 hours</h2>
+  <div class="risk-list">
+    <div class="risk-row">
+      <div class="risk-check">&#10003;</div>
+      <div class="risk-text"><b>₹2.4 Cr client saved</b> <span>— resolution plan sent before Saturday deadline</span></div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-check">&#10003;</div>
+      <div class="risk-text"><b>₹50K/day GST penalty avoided</b> <span>— data prep delegated, manager files Monday</span></div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-check">&#10003;</div>
+      <div class="risk-text"><b>Monday review unblocked</b> <span>— cost analysis done, slides prepped over weekend</span></div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-check">&#10003;</div>
+      <div class="risk-text"><b>Leadership credibility restored</b> <span>— wrong dashboard numbers fixed same-day</span></div>
+    </div>
+  </div>
+  <div style="margin-top:40px;display:flex;gap:48px;justify-content:center">
+    <div class="stat-block"><div class="medium-num green">8h</div><div class="stat-label">Used of 8h</div></div>
+    <div class="stat-block"><div class="medium-num accent">5</div><div class="stat-label">Tasks actioned</div></div>
+    <div class="stat-block"><div class="medium-num red">14h</div><div class="stat-label">Correctly ignored</div></div>
+  </div>
+</div>
+
+<!-- SLIDE 9: KEY INSIGHT -->
+<div class="slide" data-slide="8">
+  <div class="slide-num">09 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">The Key Insight</h3>
+  <div class="big-num accent">36%</div>
+  <h2 style="margin-top:16px">of the backlog was actioned.<br><span class="green">100%</span> of the risk was covered.</h2>
+  <div class="subtitle" style="margin-top:24px">
+    Productivity isn't about doing more.<br>
+    It's about <b style="color:var(--text)">choosing correctly</b> what not to do.
+  </div>
+</div>
+
+<!-- SLIDE 10: LIVE DEMO -->
+<div class="slide" data-slide="9">
+  <div class="slide-num">10 / 10</div>
+  <h3 style="margin-top:0;margin-bottom:16px">The Execution Dashboard</h3>
+  <h2>Let me show you <span class="accent">the full plan</span></h2>
+  <div class="cta-box">
+    <p>Complete execution dashboard with:<br>
+    <b style="color:var(--text)">Ranked task cards</b> · <b style="color:var(--text)">Priority scores</b> · <b style="color:var(--text)">Visual timeline</b> · <b style="color:var(--text)">Delegation checkpoints</b></p>
+    <div class="arrow">&#8594; Switching to live dashboard</div>
+  </div>
+</div>
+
+<!-- NAV DOTS -->
+<div class="nav" id="nav"></div>
+<div class="nav-hint">&#8592; &#8594; arrow keys to navigate</div>
+
+<!-- ROOM CODE -->
+<div class="room-badge">
+  <div class="conn-dot" id="connDot"></div>
+  <span>REMOTE</span>
+  <span class="code" id="roomCode">----</span>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const slides=document.querySelectorAll('.slide');
+const nav=document.getElementById('nav');
+const progress=document.getElementById('progress');
+let current=0;
+let peer=null, remoteConn=null;
+
+// Slide notes for remote
+const NOTES=[
+  'Title slide. Set the stage: a deterministic system, not another productivity hack.',
+  '22 hours of work, 8 hours available. Pause for effect — let the gap sink in.',
+  'Three traps. Ask the audience: which one do YOU fall into?',
+  'This is the core thesis. Maximize risk reduced, not tasks completed.',
+  '5 rules in strict order. Emphasize: ORDER matters — skip one, output changes.',
+  '6 weighted factors. Business Impact has the highest weight (×4). No gut feel.',
+  '10 tasks → 5 buckets. Every task gets exactly one decision. Point out the Error and Ignore.',
+  '4 risks neutralized. These are the "so what" — real money, real consequences.',
+  'The punchline: 36% actioned, 100% risk covered. Pause here.',
+  'Transition to live dashboard. Switch browser tabs now.'
+];
+
+// Build nav dots
+slides.forEach((_,i)=>{
+  const dot=document.createElement('div');
+  dot.className='nav-dot'+(i===0?' active':'');
+  dot.onclick=()=>goTo(i);
+  nav.appendChild(dot);
+});
+
+function goTo(n,broadcast){
+  if(broadcast===undefined)broadcast=true;
+  if(n<0||n>=slides.length)return;
+  slides[current].classList.remove('active');
+  nav.children[current].classList.remove('active');
+  current=n;
+  slides[current].classList.add('active');
+  nav.children[current].classList.add('active');
+  progress.style.width=((current/(slides.length-1))*100)+'%';
+  if(broadcast&&remoteConn&&remoteConn.open){
+    remoteConn.send({slide:current,total:slides.length,note:NOTES[current]||''});
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();goTo(current+1)}
+  if(e.key==='ArrowLeft')goTo(current-1);
+  if(e.key==='f'||e.key==='F'){
+    if(!document.fullscreenElement)document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+});
+
+// Touch support
+let touchX=0;
+document.addEventListener('touchstart',e=>touchX=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{
+  const diff=e.changedTouches[0].clientX-touchX;
+  if(Math.abs(diff)>50){diff<0?goTo(current+1):goTo(current-1)}
+});
+
+// === PeerJS Remote ===
+const roomCode=String(Math.floor(1000+Math.random()*9000));
+document.getElementById('roomCode').textContent=roomCode;
+
+function initPeer(){
+  peer=new Peer('tc-'+roomCode,{
+    debug:0,
+    config:{iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:stun1.l.google.com:19302'}
+    ]}
+  });
+
+  peer.on('open',function(){
+    console.log('Deck peer ready: tc-'+roomCode);
+  });
+
+  peer.on('connection',function(conn){
+    remoteConn=conn;
+    document.getElementById('connDot').classList.add('connected');
+    document.getElementById('roomCode').classList.add('connected');
+
+    conn.on('data',function(data){
+      if(typeof data.slide==='number')goTo(data.slide,false);
+      if(data.action==='fullscreen'){
+        if(!document.fullscreenElement)document.documentElement.requestFullscreen();
+      }
+    });
+
+    conn.on('close',function(){
+      remoteConn=null;
+      document.getElementById('connDot').classList.remove('connected');
+      document.getElementById('roomCode').classList.remove('connected');
+    });
+
+    conn.on('open',function(){
+      conn.send({slide:current,total:slides.length,note:NOTES[current]||''});
+    });
+  });
+
+  peer.on('error',function(err){
+    if(err.type==='unavailable-id'){peer.destroy();setTimeout(initPeer,1000)}
+  });
+
+  peer.on('disconnected',function(){
+    if(!peer.destroyed)peer.reconnect();
+  });
+}
+
+initPeer();
+</script>
+</body>
+</html>
